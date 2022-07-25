@@ -43,20 +43,24 @@ class solver
 
     private function fill_rules_has_only_one_empty_cell(){
         foreach ($this->table_rules as $rule){
-            $cell_count = count($rule[1]);
-            $filled_count = 0;
-            $empty_cell_address = [];
-
-            foreach ($rule[1] as $address){
-                if ($this->table[$address[0]][$address[1]] === 0) {
-                    $empty_cell_address[] = $address;
-                }
-            }
+            $empty_cell_address = $this->find_killer_empty_cell($rule[1]);
 
             if (count($empty_cell_address) == 1){
                 $this->table[$empty_cell_address[0][0]][$empty_cell_address[0][1]] = $rule[0] - $this->sum_of_rule($rule[1]);
             }
         }
+    }
+
+    private function find_killer_empty_cell($rule_cells_addresses){
+        $empty_cell_address = [];
+
+        foreach ($rule_cells_addresses as $address){
+            if ($this->table[$address[0]][$address[1]] === 0) {
+                $empty_cell_address[] = $address;
+            }
+        }
+
+        return $empty_cell_address;
     }
 
     private function sum_of_rule($rule_addresses){
@@ -126,30 +130,34 @@ class solver
         return $this->is_valid_killer($num,$location);
     }
 
-    public function is_valid_killer($num,$address)
-    {
-        $found_rule = null;
+    private function find_rule_has_include_cell($cell_address){
         foreach ($this->table_rules as $rule){
             foreach ($rule[1] as $rule_address){
-                if ($rule_address == $address){
-                    $found_rule = $rule;
+                if ($rule_address == $cell_address){
+                    return $rule;
                 }
             }
         }
+        return false;
+    }
 
-        $empty_cell_address = [];
+    private function is_valid_killer($num,$address)
+    {
+        $found_rule = $this->find_rule_has_include_cell($address);
 
-        foreach ($found_rule[1] as $address){
-            if ($this->table[$address[0]][$address[1]] === 0) {
-                $empty_cell_address[] = $address;
-            }
+        $empty_cell_address = $this->find_killer_empty_cell($found_rule[1]);
+
+        $sum_of_rule_cells = $this->sum_of_rule($found_rule[1]);
+
+        if ($sum_of_rule_cells >= $found_rule[0] || $sum_of_rule_cells + $num > $found_rule[0]){
+            return false;
         }
 
         if (count($empty_cell_address) == 1){
-            return ($found_rule[0] == $num + $this->sum_of_rule($found_rule[1]));
+            return ($found_rule[0] == $num + $sum_of_rule_cells);
         }
 
-        return  true;
+        return true;
     }
 
     private function find_start_box($location)
